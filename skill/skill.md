@@ -23,7 +23,19 @@ Agent takımlarını git repo'lardan kurar, günceller ve kaldırır. Her takım
 1. Repo URL'ini al (HTTPS veya SSH)
 2. Team adını repo adından çıkar (son segment, `.git` kaldırılır)
 3. `~/agent-teams/{team-name}/` dizinine clone'la (zaten varsa `git pull`)
-4. Repo içindeki yapıyı tara ve symlink'leri oluştur:
+4. **Dependency kontrolü:** `team.json` dosyası varsa oku. `dependencies` array'indeki her repo URL'i için **önce o dependency'yi kur** (recursive `/team install`). Dependency zaten kuruluysa atla.
+
+```json
+// team.json örneği:
+{
+  "name": "software-project-team",
+  "dependencies": [
+    "https://github.com/mkurak/agent-workshop-core.git"
+  ]
+}
+```
+
+5. Repo içindeki yapıyı tara ve symlink'leri oluştur:
 
 ```bash
 # Repo yapısı (convention):
