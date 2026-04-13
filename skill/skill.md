@@ -1,32 +1,32 @@
 ---
 name: team
-description: "Agent takımlarını yönet: install (git repo'dan kur), list (kurulu takımları göster), remove (takım kaldır), update (takımı güncelle)."
-argument-hint: "<install|list|remove|update> [repo-url veya team-name]"
+description: "Manage agent teams: install (set up from git repo), list (show installed teams), remove (remove a team), update (update a team)."
+argument-hint: "<install|list|remove|update> [repo-url or team-name]"
 ---
 
 # /team Skill — Agent Team Manager
 
-Agent takımlarını git repo'lardan kurar, günceller ve kaldırır. Her takım agent'lar, skill'ler ve rule'lar içerebilir. Tümü global olarak `~/.claude/` altına symlink'lenir.
+Installs, updates, and removes agent teams from git repos. Each team can contain agents, skills, and rules. All are symlinked globally under `~/.claude/`.
 
-## Parametre Ayrıştırma
+## Parameter Parsing
 
-İlk kelime modu belirler: `install`, `list`, `remove`, `update`.
+The first word determines the mode: `install`, `list`, `remove`, `update`.
 
 ---
 
-## `install` Modu
+## `install` Mode
 
-**Kullanım:** `/team install <git-repo-url>`
+**Usage:** `/team install <git-repo-url>`
 
-**Akış:**
+**Flow:**
 
-1. Repo URL'ini al (HTTPS veya SSH)
-2. Team adını repo adından çıkar (son segment, `.git` kaldırılır)
-3. `~/agent-teams/{team-name}/` dizinine clone'la (zaten varsa `git pull`)
-4. **Dependency kontrolü:** `team.json` dosyası varsa oku. `dependencies` array'indeki her repo URL'i için **önce o dependency'yi kur** (recursive `/team install`). Dependency zaten kuruluysa atla.
+1. Get the repo URL (HTTPS or SSH)
+2. Extract the team name from the repo name (last segment, `.git` removed)
+3. Clone into `~/agent-teams/{team-name}/` directory (if already exists, run `git pull`)
+4. **Dependency check:** If a `team.json` file exists, read it. For each repo URL in the `dependencies` array, **install that dependency first** (recursive `/team install`). Skip if the dependency is already installed.
 
 ```json
-// team.json örneği:
+// team.json example:
 {
   "name": "software-project-team",
   "dependencies": [
@@ -35,23 +35,23 @@ Agent takımlarını git repo'lardan kurar, günceller ve kaldırır. Her takım
 }
 ```
 
-5. Repo içindeki yapıyı tara ve symlink'leri oluştur:
+5. Scan the repo structure and create symlinks:
 
 ```bash
-# Repo yapısı (convention):
+# Repo structure (convention):
 {team-repo}/
-├── agents/          → her .md dosyası ~/.claude/agents/'a symlink'lenir
-├── skills/          → her alt dizin ~/.claude/skills/'a symlink'lenir
-└── rules/           → her .md dosyası ~/.claude/rules/'a symlink'lenir
+├── agents/          → each .md file is symlinked to ~/.claude/agents/
+├── skills/          → each subdirectory is symlinked to ~/.claude/skills/
+└── rules/           → each .md file is symlinked to ~/.claude/rules/
 ```
 
-5. Symlink oluşturma kuralları:
-   - `agents/*.md` → `~/.claude/agents/{dosya-adı}.md` (flat symlink)
-   - `skills/{skill-name}/` → `~/.claude/skills/{skill-name}/` (dizin symlink)
-   - `rules/*.md` → `~/.claude/rules/{dosya-adı}.md` (flat symlink)
-   - İsim çakışması varsa **UYAR ve SORMA** — mevcut dosyanın üzerine yazma
+5. Symlink creation rules:
+   - `agents/*.md` → `~/.claude/agents/{file-name}.md` (flat symlink)
+   - `skills/{skill-name}/` → `~/.claude/skills/{skill-name}/` (directory symlink)
+   - `rules/*.md` → `~/.claude/rules/{file-name}.md` (flat symlink)
+   - If there is a name conflict, **WARN and ASK** — do not overwrite the existing file
 
-6. `~/agent-teams/{team-name}/.team-manifest.json` oluştur:
+6. Create `~/agent-teams/{team-name}/.team-manifest.json`:
 ```json
 {
   "name": "software-project-team",
@@ -64,9 +64,9 @@ Agent takımlarını git repo'lardan kurar, günceller ve kaldırır. Her takım
 }
 ```
 
-7. Kullanıcıya özet göster: kaç agent, skill, rule kuruldu.
+7. Show summary to the user: how many agents, skills, rules were installed.
 
-**Komutlar (Bash ile çalıştırılacak):**
+**Commands (to be run via Bash):**
 
 ```bash
 # Clone
@@ -78,7 +78,7 @@ for f in "${TEAM_DIR}/agents/"*.md; do
   [ -f "$f" ] && ln -sf "$f" "${HOME}/.claude/agents/$(basename "$f")"
 done
 
-# Skills symlink (dizin bazlı)
+# Skills symlink (directory-based)
 for d in "${TEAM_DIR}/skills/"*/; do
   [ -d "$d" ] && ln -sf "$d" "${HOME}/.claude/skills/$(basename "$d")"
 done
@@ -91,16 +91,16 @@ done
 
 ---
 
-## `list` Modu
+## `list` Mode
 
-**Kullanım:** `/team list`
+**Usage:** `/team list`
 
-**Akış:**
+**Flow:**
 
-1. `~/agent-teams/` dizinindeki her alt dizini tara
-2. Her birinde `.team-manifest.json` varsa oku
-3. Yoksa dizin yapısından say (agents/, skills/, rules/ altındaki dosyalar)
-4. Tablo formatında göster:
+1. Scan each subdirectory in `~/agent-teams/`
+2. If `.team-manifest.json` exists in any of them, read it
+3. If not, count from the directory structure (files under agents/, skills/, rules/)
+4. Display in table format:
 
 ```
 Installed Teams:
@@ -113,23 +113,23 @@ Total: 2 teams, 9 agents, 4 skills, 2 rules
 
 ---
 
-## `remove` Modu
+## `remove` Mode
 
-**Kullanım:** `/team remove <team-name>`
+**Usage:** `/team remove <team-name>`
 
-**Akış:**
+**Flow:**
 
-1. `~/agent-teams/{team-name}/` dizinini bul
-2. `.team-manifest.json` varsa symlink listesini oradan oku
-3. Yoksa `agents/`, `skills/`, `rules/` altındaki dosyaları tara
-4. Her symlink'i `~/.claude/` altından kaldır (sadece symlink ise — gerçek dosyayı silme)
-5. Kullanıcıya sor: "Kaynak dizini de sileyim mi? (~/agent-teams/{team-name}/)" — Evet/Hayır
-6. Özet göster: kaç symlink kaldırıldı
+1. Find the `~/agent-teams/{team-name}/` directory
+2. If `.team-manifest.json` exists, read the symlink list from it
+3. If not, scan the files under `agents/`, `skills/`, `rules/`
+4. Remove each symlink from `~/.claude/` (only if it is a symlink — do not delete real files)
+5. Ask the user: "Should I also delete the source directory? (~/agent-teams/{team-name}/)" — Yes/No
+6. Show summary: how many symlinks were removed
 
-**Komutlar:**
+**Commands:**
 
 ```bash
-# Symlink'leri kaldır (sadece symlink olanları)
+# Remove symlinks (only those that are symlinks)
 for f in "${HOME}/.claude/agents/"*.md; do
   [ -L "$f" ] && readlink "$f" | grep -q "agent-teams/{team-name}" && rm "$f"
 done
@@ -145,42 +145,42 @@ done
 
 ---
 
-## `update` Modu
+## `update` Mode
 
-**Kullanım:** `/team update <team-name>`
+**Usage:** `/team update <team-name>`
 
-**Akış:**
+**Flow:**
 
-1. `~/agent-teams/{team-name}/` dizinine git
-2. `git pull` çalıştır
-3. Yeni eklenen dosyalar için symlink oluştur (mevcut olanlar zaten güncel — symlink aynı dosyayı gösteriyor)
-4. Silinen dosyalar için kırık symlink'leri temizle
-5. Özet göster: güncellenen, eklenen, kaldırılan
+1. Navigate to the `~/agent-teams/{team-name}/` directory
+2. Run `git pull`
+3. Create symlinks for newly added files (existing ones are already up to date — the symlink points to the same file)
+4. Clean up broken symlinks for deleted files
+5. Show summary: updated, added, removed
 
-**Komutlar:**
+**Commands:**
 
 ```bash
 cd "${HOME}/agent-teams/{team-name}" && git pull
 
-# Kırık symlink'leri temizle
+# Clean up broken symlinks
 find "${HOME}/.claude/agents" -type l ! -exec test -e {} \; -delete 2>/dev/null
 find "${HOME}/.claude/skills" -type l ! -exec test -e {} \; -delete 2>/dev/null
 find "${HOME}/.claude/rules" -type l ! -exec test -e {} \; -delete 2>/dev/null
 
-# Yeni dosyalar için symlink ekle (mevcut olanlar atlanır)
+# Add symlinks for new files (existing ones are skipped)
 for f in agents/*.md; do
   target="${HOME}/.claude/agents/$(basename "$f")"
   [ ! -e "$target" ] && ln -sf "$(pwd)/$f" "$target"
 done
-# ... skills ve rules için aynı
+# ... same for skills and rules
 ```
 
 ---
 
-## Önemli Kurallar
+## Important Rules
 
-1. **Symlink'ler her zaman `~/agent-teams/{name}/` → `~/.claude/` yönünde.** Tersi değil.
-2. **İsim çakışması = uyarı.** Mevcut dosyanın üzerine yazılmaz. Kullanıcıya sorulur.
-3. **Sadece symlink silinir.** `remove` komutu gerçek dosyayı asla silmez — sadece symlink kaldırılır.
-4. **Manifest dosyası opsiyonel.** Yoksa dizin yapısından tüm bilgi çıkarılabilir. Ama varsa daha güvenilir.
-5. **Convention-over-configuration.** Repo'da `agents/`, `skills/`, `rules/` dizin adları zorunlu. Başka isim tanınmaz.
+1. **Symlinks always go from `~/agent-teams/{name}/` to `~/.claude/`.** Not the other way around.
+2. **Name conflict = warning.** The existing file is not overwritten. The user is asked.
+3. **Only symlinks are deleted.** The `remove` command never deletes real files — only symlinks are removed.
+4. **Manifest file is optional.** If it does not exist, all information can be derived from the directory structure. But if it exists, it is more reliable.
+5. **Convention-over-configuration.** The directory names `agents/`, `skills/`, `rules/` in the repo are required. Other names are not recognized.
