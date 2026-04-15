@@ -24,7 +24,7 @@ The first word determines the mode: `install`, `list`, `remove`, `update`.
 
 1. Get the repo URL (HTTPS or SSH)
 2. Extract the team name from the repo name (last segment, `.git` removed)
-3. Clone into `~/agent-teams/{team-name}/` directory (if already exists, run `git pull`)
+3. Clone into `~/.claude/repos/mkurak/{repo-name}/` directory (if already exists, run `git pull`)
 4. Read `team.json` for version and dependencies:
 
 ```json
@@ -82,7 +82,7 @@ done
       "repo": "https://github.com/mkurak/agent-workshop-software-project-team.git",
       "version": "1.0.0",
       "installedAt": "2026-04-15T12:00:00Z",
-      "sourceDir": "~/agent-teams/software-project-team"
+      "sourceDir": "~/.claude/repos/mkurak/software-project-team"
     }
   ]
 }
@@ -100,7 +100,7 @@ done
 
 1. Read `.claude/.team-installs.json` from the current project
 2. For each installed team, count agents/skills/rules
-3. Check version: compare installed version with `~/agent-teams/{team}/team.json` version
+3. Check version: compare installed version with `~/.claude/repos/mkurak/{team}/team.json` version
 4. Display:
 
 ```
@@ -123,9 +123,9 @@ Global (core):
 
 1. Read `.claude/.team-installs.json`
 2. Find the team entry
-3. Remove all symlinks from `.claude/agents/`, `.claude/skills/`, `.claude/rules/` that point to that team's `~/agent-teams/` directory
+3. Remove all symlinks from `.claude/agents/`, `.claude/skills/`, `.claude/rules/` that point to that team's `~/.claude/repos/mkurak/` directory
 4. Remove the team entry from `.team-installs.json`
-5. Ask: "Also delete source at ~/agent-teams/{team-name}/?" (usually No — other projects might use it)
+5. Ask: "Also delete source at ~/.claude/repos/mkurak/{repo-name}/?" (usually No — other projects might use it)
 6. Show summary
 
 ---
@@ -136,7 +136,7 @@ Global (core):
 
 **Flow:**
 
-1. Navigate to `~/agent-teams/{team-name}/`
+1. Navigate to `~/.claude/repos/mkurak/{repo-name}/`
 2. Run `git pull`
 3. Read new version from `team.json`
 4. Add symlinks for any newly added agents/skills/rules
@@ -187,7 +187,7 @@ See: `~/.claude/rules/version-check.md`
 
 1. **Teams install to `.claude/`, NOT `~/.claude/`.** Project-level, always.
 2. **Dependencies (core) install to `~/.claude/`.** Global, always.
-3. **Source repos live in `~/agent-teams/`.** Shared across projects — only symlinks differ.
+3. **Source repos live in `~/.claude/repos/mkurak/`.** Shared across projects — only symlinks differ.
 4. **Name conflict = warning.** Ask user, don't overwrite.
 5. **Only symlinks are deleted on remove.** Source directory stays unless user confirms.
 6. **`.team-installs.json` tracks what's installed.** Single source of truth for this project.

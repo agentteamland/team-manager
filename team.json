@@ -1,0 +1,5 @@
+{
+  "name": "agent-team-manager-skill",
+  "version": "2.0.0",
+  "description": "Manage agent teams: install, list, remove, update. Teams are project-level."
+}

@@ -6,8 +6,8 @@ A Claude Code skill for managing agent teams via Git repositories. Install, upda
 
 ```bash
 # One-time setup (bootstrap)
-git clone https://github.com/mkurak/agent-workshop-agent-team-manager-skill.git ~/agent-teams/manager
-cd ~/agent-teams/manager
+git clone https://github.com/mkurak/agent-workshop-agent-team-manager-skill.git ~/.claude/repos/mkurak/manager
+cd ~/.claude/repos/mkurak/manager
 ./install.sh
 ```
 
@@ -41,9 +41,9 @@ my-team/
 ```
 
 When you run `/team install <repo-url>`:
-1. The repo is cloned to `~/agent-teams/<team-name>/`
-2. All agents, skills, and rules are symlinked to `~/.claude/`
-3. Everything becomes globally available in every project
+1. The repo is cloned to `~/.claude/repos/mkurak/<repo-name>/` (cached)
+2. Agents, skills, and rules are symlinked to the **project's** `.claude/` directory
+3. Everything becomes available in that specific project (not globally)
 
 ## Why Symlinks?
 
