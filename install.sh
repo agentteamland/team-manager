@@ -41,12 +41,16 @@ else
   cd "${CORE_DIR}" && git pull --quiet 2>/dev/null
 fi
 
-# Core symlinks (global)
-ln -sf "${CORE_DIR}/skills/save-learnings" "${HOME}/.claude/skills/save-learnings"
-ln -sf "${CORE_DIR}/rules/memory-system.md" "${HOME}/.claude/rules/memory-system.md"
-ln -sf "${CORE_DIR}/rules/agent-structure.md" "${HOME}/.claude/rules/agent-structure.md"
-ln -sf "${CORE_DIR}/rules/version-check.md" "${HOME}/.claude/rules/version-check.md"
-echo "✅ Core installed globally (save-learnings + rules)"
+# Core symlinks (global) — all skills and rules
+for d in "${CORE_DIR}/skills/"*/; do
+  [ -d "$d" ] || continue
+  ln -sf "${d%/}" "${HOME}/.claude/skills/$(basename "${d%/}")"
+done
+for f in "${CORE_DIR}/rules/"*.md; do
+  [ -f "$f" ] || continue
+  ln -sf "$f" "${HOME}/.claude/rules/$(basename "$f")"
+done
+echo "✅ Core installed globally (skills + rules)"
 
 # 3. Install universal skills (brainstorm, rule, rule-wizard, create-new-project)
 for skill_repo in agent-workshop-brainstorm-skill agent-workshop-rule-skill agent-workshop-create-project-skill; do
