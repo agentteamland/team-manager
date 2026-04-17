@@ -1,5 +1,27 @@
 {
-  "name": "agent-team-manager-skill",
+  "schemaVersion": 1,
+  "name": "team-manager",
   "version": "2.0.0",
-  "description": "Manage agent teams: install, list, remove, update. Teams are project-level."
+  "description": "Manage AgentTeamLand teams: install, list, remove, update. Teams install into project-level .claude/",
+  "author": {
+    "name": "AgentTeamLand",
+    "url": "https://github.com/agentteamland"
+  },
+  "license": "MIT",
+  "keywords": ["team", "install", "package-manager", "bootstrap"],
+  "repository": "https://github.com/agentteamland/team-manager",
+  "homepage": "https://github.com/agentteamland",
+  "agents": [],
+  "skills": [
+    { "name": "team", "description": "/team install|list|remove|update — project-level team management with registry name-resolution and extends support" }
+  ],
+  "rules": [],
+  "extends": null,
+  "excludes": [],
+  "dependencies": {
+    "core": "^1.0.0"
+  },
+  "requires": {
+    "atl": ">=0.1.0"
+  }
 }
