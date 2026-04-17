@@ -14,6 +14,8 @@ REPOS_DIR="${HOME}/.claude/repos/agentteamland"
 SKILL_TARGET="${HOME}/.claude/skills/team"
 
 echo "🔧 AgentTeamLand — Bootstrap Installer"
+echo "   Installs the globally-universal skills only."
+echo "   Team-specific scaffolders (/create-new-project, /verify-system) come from teams you install."
 echo ""
 
 # Ensure directory structure
@@ -52,8 +54,11 @@ for f in "${CORE_DIR}/rules/"*.md; do
 done
 echo "✅ Core installed globally (skills + rules)"
 
-# 3. Install universal skills (brainstorm, rule, create-project)
-for skill_repo in brainstorm rule create-project; do
+# 3. Install universal skills (brainstorm, rule)
+# NOTE: create-project was retired in Karar #9 (2026-04-17) \u2014 scaffolders are
+# now team-scoped. /create-new-project comes from the installed team
+# (e.g. software-project-team), not as a global skill.
+for skill_repo in brainstorm rule; do
   SKILL_REPO_DIR="${REPOS_DIR}/${skill_repo}"
   if [ ! -d "${SKILL_REPO_DIR}" ]; then
     echo "📦 Cloning ${skill_repo}..."
@@ -80,20 +85,23 @@ for skill_repo in brainstorm rule create-project; do
     done
   fi
 done
-echo "✅ Universal skills installed (brainstorm, rule, rule-wizard, create-new-project)"
+echo "✅ Universal skills installed (brainstorm, rule, rule-wizard)"
 
 echo ""
 echo "════════════════════════════════════════════"
 echo "✅ Bootstrap complete!"
 echo ""
-echo "Global skills: /team, /save-learnings, /brainstorm, /rule, /rule-wizard, /create-new-project"
+echo "Global skills: /team, /save-learnings, /wiki, /create-code-diagram, /brainstorm, /rule, /rule-wizard"
 echo "Global rules:  memory-system, agent-structure, version-check, brainstorm"
-echo "Global agents: (none — agents are project-level)"
+echo "Global agents: (none \u2014 agents are team-scoped, project-level)"
 echo ""
 echo "Repo cache:    ~/.claude/repos/agentteamland/"
 echo ""
-echo "Next steps:"
+echo "Next steps (per project):"
 echo "  cd your-project/"
-echo "  /team install https://github.com/agentteamland/software-project-team.git"
-echo "  /create-new-project YourProjectName"
+echo "  /team install software-project-team     # or any team name from the registry"
+echo "  /create-new-project YourProjectName     # team-scoped scaffolder"
+echo "  /verify-system                          # team-scoped health check"
+echo ""
+echo "Browse teams: https://github.com/agentteamland/registry"
 echo "════════════════════════════════════════════"
