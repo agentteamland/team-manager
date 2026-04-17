@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
-# Bootstrap installer for Agent Team Manager skill.
-# Run once per machine to set up the global infrastructure.
+# Bootstrap installer for the AgentTeamLand /team skill.
+# Run once per machine to set up global infrastructure.
 #
 # Usage:
-#   git clone https://github.com/mkurak/agent-workshop-agent-team-manager-skill.git ~/.claude/repos/mkurak/agent-workshop-agent-team-manager-skill
-#   cd ~/.claude/repos/mkurak/agent-workshop-agent-team-manager-skill
+#   git clone https://github.com/agentteamland/team-manager.git ~/.claude/repos/agentteamland/team-manager
+#   cd ~/.claude/repos/agentteamland/team-manager
 #   ./install.sh
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPOS_DIR="${HOME}/.claude/repos/mkurak"
+REPOS_DIR="${HOME}/.claude/repos/agentteamland"
 SKILL_TARGET="${HOME}/.claude/skills/team"
 
-echo "🔧 Agent Workshop — Bootstrap Installer"
+echo "🔧 AgentTeamLand — Bootstrap Installer"
 echo ""
 
 # Ensure directory structure
@@ -32,10 +32,10 @@ ln -sf "${SCRIPT_DIR}/skill" "${SKILL_TARGET}"
 echo "✅ /team skill installed globally"
 
 # 2. Install core (global dependency)
-CORE_DIR="${REPOS_DIR}/agent-workshop-core"
+CORE_DIR="${REPOS_DIR}/core"
 if [ ! -d "${CORE_DIR}" ]; then
   echo "📦 Cloning core..."
-  git clone https://github.com/mkurak/agent-workshop-core.git "${CORE_DIR}" 2>/dev/null
+  git clone https://github.com/agentteamland/core.git "${CORE_DIR}" 2>/dev/null
 else
   echo "📦 Updating core..."
   cd "${CORE_DIR}" && git pull --quiet 2>/dev/null
@@ -52,12 +52,12 @@ for f in "${CORE_DIR}/rules/"*.md; do
 done
 echo "✅ Core installed globally (skills + rules)"
 
-# 3. Install universal skills (brainstorm, rule, rule-wizard, create-new-project)
-for skill_repo in agent-workshop-brainstorm-skill agent-workshop-rule-skill agent-workshop-create-project-skill; do
+# 3. Install universal skills (brainstorm, rule, create-project)
+for skill_repo in brainstorm rule create-project; do
   SKILL_REPO_DIR="${REPOS_DIR}/${skill_repo}"
   if [ ! -d "${SKILL_REPO_DIR}" ]; then
     echo "📦 Cloning ${skill_repo}..."
-    git clone "https://github.com/mkurak/${skill_repo}.git" "${SKILL_REPO_DIR}" 2>/dev/null
+    git clone "https://github.com/agentteamland/${skill_repo}.git" "${SKILL_REPO_DIR}" 2>/dev/null
   else
     echo "📦 Updating ${skill_repo}..."
     cd "${SKILL_REPO_DIR}" && git pull --quiet 2>/dev/null
@@ -90,10 +90,10 @@ echo "Global skills: /team, /save-learnings, /brainstorm, /rule, /rule-wizard, /
 echo "Global rules:  memory-system, agent-structure, version-check, brainstorm"
 echo "Global agents: (none — agents are project-level)"
 echo ""
-echo "Repo cache:    ~/.claude/repos/mkurak/"
+echo "Repo cache:    ~/.claude/repos/agentteamland/"
 echo ""
 echo "Next steps:"
 echo "  cd your-project/"
-echo "  /team install https://github.com/mkurak/agent-workshop-software-project-team.git"
+echo "  /team install https://github.com/agentteamland/software-project-team.git"
 echo "  /create-new-project YourProjectName"
 echo "════════════════════════════════════════════"
