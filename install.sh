@@ -92,7 +92,7 @@ echo "════════════════════════�
 echo "✅ Bootstrap complete!"
 echo ""
 echo "Global skills: /team, /save-learnings, /wiki, /create-code-diagram, /brainstorm, /rule, /rule-wizard"
-echo "Global rules:  memory-system, agent-structure, version-check, brainstorm, karpathy-guidelines"
+echo "Global rules:  memory-system, agent-structure, version-check, brainstorm, karpathy-guidelines, learning-capture, docs-sync"
 echo "Global agents: (none \u2014 agents are team-scoped, project-level)"
 echo ""
 echo "Repo cache:    ~/.claude/repos/agentteamland/"
