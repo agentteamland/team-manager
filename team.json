@@ -2,26 +2,24 @@
   "schemaVersion": 1,
   "name": "team-manager",
   "version": "2.0.0",
-  "description": "Manage AgentTeamLand teams: install, list, remove, update. Teams install into project-level .claude/",
+  "description": "Bootstrap installer for AgentTeamLand. Installs the atl CLI binary (the legacy /team skill it used to ship is retired in 2.0.0) and primes the global cache.",
   "author": {
     "name": "AgentTeamLand",
     "url": "https://github.com/agentteamland"
   },
   "license": "MIT",
-  "keywords": ["team", "install", "package-manager", "bootstrap"],
+  "keywords": ["bootstrap", "installer", "atl"],
   "repository": "https://github.com/agentteamland/team-manager",
   "homepage": "https://github.com/agentteamland",
   "agents": [],
   "skills": [
-    { "name": "team", "description": "/team install|list|remove|update — project-level team management with registry name-resolution and extends support" }
+    { "name": "team", "description": "DEPRECATED stub — use the atl CLI binary (atl install|list|remove|update). Skill retained only as a redirector." }
   ],
   "rules": [],
   "extends": null,
   "excludes": [],
-  "dependencies": {
-    "core": "^1.0.0"
-  },
+  "dependencies": {},
   "requires": {
-    "atl": ">=0.1.0"
+    "atl": ">=1.0.0"
   }
 }
