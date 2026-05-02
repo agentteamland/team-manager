@@ -1,94 +1,74 @@
-# 🧩 Agent Team Manager
+# 🧩 AgentTeamLand Bootstrap
 
-A Claude Code skill for managing agent teams via Git repositories. Install, update, and remove entire teams of agents, skills, and rules with a single command.
+> **As of `team-manager@2.0.0` (2026-05-02), this repo is a thin bootstrap for the [`atl` CLI binary](https://github.com/agentteamland/cli).**
+>
+> The legacy `/team` skill that lived here has been retired — every install / list / remove / update operation is now native in `atl`. See the [migration note in skill/skill.md](skill/skill.md) for details.
 
 ## Quick Start
 
+If you don't have `atl` yet, the bootstrap script installs it (via brew when available) and primes the global cache:
+
 ```bash
-# One-time setup (bootstrap)
 git clone https://github.com/agentteamland/team-manager.git ~/.claude/repos/agentteamland/team-manager
 cd ~/.claude/repos/agentteamland/team-manager
 ./install.sh
 ```
 
-This installs:
-- `/team` skill (global)
-- Core infrastructure (memory system, version check, agent structure rules)
-- Universal skills (`/brainstorm`, `/rule`, `/rule-wizard`, `/save-learnings`, `/create-new-project`)
+The script is idempotent — safe to re-run.
 
-## Usage
+If `atl` is already installed, you can skip this repo entirely. Use `atl` directly:
 
 ```bash
-# Install a team into your project
-/team install https://github.com/agentteamland/software-project-team.git
-
-# List installed teams (for current project)
-/team list
-
-# Update a team (git pull + refresh symlinks)
-/team update software-project-team
-
-# Remove a team from project
-/team remove software-project-team
+brew install agentteamland/tap/atl   # macOS / Linuxbrew
+# or: scoop install atl              # Windows (after scoop bucket add)
+# or: winget install AgentTeamLand.atl
 ```
 
-## Architecture
+## Per-project usage (atl)
 
-```
-~/.claude/
-├── repos/agentteamland/              ← All repos cached here (single source of truth)
-│   ├── core/
-│   ├── software-project-team/
-│   └── ...
-├── skills/                    ← ONLY global skills (team, brainstorm, rule, etc.)
-├── rules/                     ← ONLY global rules (memory-system, version-check, etc.)
-└── agents/                    ← EMPTY (agents are project-level, never global)
+```bash
+cd your-project/
 
-your-project/.claude/
-├── agents/                    ← Team agents symlinked here (per-project)
-│   ├── api-agent.md → ~/.claude/repos/agentteamland/.../agents/api-agent/agent.md
-│   └── ...
-├── skills/                    ← Team skills symlinked here (if any)
-└── rules/                     ← Team rules symlinked here (if any)
+atl install software-project-team    # install a team from the public registry
+atl install design-system-team       # native design + prototype skills
+atl install <git-url>                # any team repo, by URL
+
+atl list                             # list installed teams in this project
+atl update                           # pull latest cache, refresh unmodified copies
+atl remove <team>                    # remove a team (use --force for non-interactive)
+atl --help                           # full reference
 ```
 
-## How It Works
+`atl install` copies the team's resources (agents, skills, rules) into `<project>/.claude/`. The global cache lives at `~/.claude/repos/agentteamland/{team}/` and is shared across all projects. Local edits in your project are protected — `atl update` only refreshes copies that haven't been touched.
 
-Teams are Git repositories that follow a simple convention:
+## What this repo contains
 
-```
-my-team/
-├── agents/    → symlinked to PROJECT's .claude/agents/
-├── skills/    → symlinked to PROJECT's .claude/skills/
-├── rules/     → symlinked to PROJECT's .claude/rules/
-└── team.json  → name, version, dependencies
-```
+| Path | Purpose |
+|------|---------|
+| `install.sh` | One-shot bootstrap: install atl + clone core into the cache + register Claude Code hooks |
+| `skill/skill.md` | Deprecation stub of the retired `/team` skill — points readers to atl |
+| `team.json` | Team manifest (declares the deprecation; for registry visibility) |
 
-When you run `/team install <repo-url>`:
-1. Repo is cloned to `~/.claude/repos/agentteamland/<repo-name>/` (cached once, shared across projects)
-2. Agents, skills, and rules are symlinked into the **project's** `.claude/` directory
-3. Everything becomes available in **that specific project** only
+## What used to be here
 
-### Why Project-Level?
+Before `2.0.0`, this repo shipped:
 
-- **Multiple projects, different teams.** Project A uses software-team, Project B uses youtube-team.
-- **Version independence.** Project A on v1.2, Project B on v1.3.
-- **Clean separation.** `ls .claude/agents/` shows exactly what THIS project uses.
+- The `/team` skill (Markdown-driven Claude flow for install / list / remove / update)
+- An install.sh that symlinked a long list of skills + rules into `~/.claude/`
+- A 4-hook Claude Code setup (SessionStart + UserPromptSubmit + SessionEnd + PreCompact)
 
-### Automatic Version Check
+Both `/team` and the symlink topology were retired by `agentteamland/cli@v1.0.0` (project-local copies, install-mechanism-redesign decision). The 4-hook design was retired by `cli@v1.1.0` after the SessionEnd / PreCompact path was found never to deliver stdout to Claude.
 
-On every prompt, the system automatically checks if cached repos are outdated. If a newer version exists on origin, it auto-pulls silently — no user interaction needed. You always work with the latest version.
+The platform-wide review (2026-05-02) flagged keeping `/team` in production as a CRITICAL drift item — two competing implementations of the same flow, with subtly conflicting documentation, was actively confusing new contributors. This `2.0.0` release closes that gap.
 
-## Creating Your Own Team
+## Where things live now
 
-1. Create a Git repo with `agents/`, `skills/`, and/or `rules/` directories
-2. Add a `team.json` with name, version, and dependencies
-3. Add your agent `.md` files following the [agent structure conventions](https://github.com/agentteamland/core)
-4. Push to GitHub
-5. Install with `/team install <your-repo-url>`
-
-See [software-project-team](https://github.com/agentteamland/software-project-team) for a real-world example with 13 agents.
+- The CLI binary: [agentteamland/cli](https://github.com/agentteamland/cli)
+- Global skills (save-learnings, wiki, create-pr, create-code-diagram): [agentteamland/core](https://github.com/agentteamland/core)
+- /brainstorm + /rule + /rule-wizard skills: [agentteamland/brainstorm](https://github.com/agentteamland/brainstorm), [agentteamland/rule](https://github.com/agentteamland/rule)
+- Public team catalog: [agentteamland/registry](https://github.com/agentteamland/registry)
+- Full docs: [agentteamland.github.io/docs](https://agentteamland.github.io/docs/)
 
 ## License
 
-MIT
+MIT. See [LICENSE](LICENSE).

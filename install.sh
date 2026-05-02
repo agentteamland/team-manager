@@ -1,107 +1,78 @@
 #!/usr/bin/env bash
-# Bootstrap installer for the AgentTeamLand /team skill.
-# Run once per machine to set up global infrastructure.
+# Bootstrap installer for the AgentTeamLand global skills + rules + binary.
+#
+# v2.0.0 (2026-05-02): the legacy /team skill has been retired in favor of
+# the `atl` CLI binary. This script now does the minimum needed to get a
+# fresh machine ready: install atl (via brew if available) and prime the
+# global cache by cloning the agentteamland/core repo.
+#
+# Per-project installs are driven by `atl install <team-name>` from inside
+# the project directory — see https://agentteamland.github.io/docs/ for
+# the full per-project flow.
 #
 # Usage:
 #   git clone https://github.com/agentteamland/team-manager.git ~/.claude/repos/agentteamland/team-manager
 #   cd ~/.claude/repos/agentteamland/team-manager
 #   ./install.sh
+#
+# Re-running is safe (idempotent).
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPOS_DIR="${HOME}/.claude/repos/agentteamland"
-SKILL_TARGET="${HOME}/.claude/skills/team"
 
-echo "🔧 AgentTeamLand — Bootstrap Installer"
-echo "   Installs the globally-universal skills only."
-echo "   Team-specific scaffolders (/create-new-project, /verify-system) come from teams you install."
+echo "🔧 AgentTeamLand — Bootstrap Installer (v2.0.0)"
 echo ""
 
-# Ensure directory structure
-mkdir -p "${HOME}/.claude/skills"
-mkdir -p "${HOME}/.claude/rules"
-mkdir -p "${HOME}/.claude/agents"
-mkdir -p "${REPOS_DIR}"
-
-# 1. Install team skill (global)
-if [ -L "${SKILL_TARGET}" ]; then
-  rm "${SKILL_TARGET}"
-elif [ -d "${SKILL_TARGET}" ]; then
-  mv "${SKILL_TARGET}" "${SKILL_TARGET}.backup.$(date +%s)"
+# ── Step 1: ensure atl is installed ─────────────────────────────────────
+if command -v atl >/dev/null 2>&1; then
+  echo "✅ atl already installed: $(atl --version 2>&1 | head -1)"
+else
+  echo "📦 atl not found on PATH."
+  if command -v brew >/dev/null 2>&1; then
+    echo "   Installing via Homebrew..."
+    brew install agentteamland/tap/atl
+    echo "✅ atl installed: $(atl --version 2>&1 | head -1)"
+  else
+    echo "   Homebrew is not available on this machine."
+    echo "   Install atl manually from one of:"
+    echo "     • brew install agentteamland/tap/atl  (macOS / Linuxbrew)"
+    echo "     • scoop install atl                    (Windows; add bucket first)"
+    echo "     • winget install AgentTeamLand.atl     (Windows)"
+    echo "     • Or download a release from https://github.com/agentteamland/cli/releases"
+    echo "   Then re-run this script."
+    exit 1
+  fi
 fi
-ln -sf "${SCRIPT_DIR}/skill" "${SKILL_TARGET}"
-echo "✅ /team skill installed globally"
 
-# 2. Install core (global dependency)
+# ── Step 2: prime the global cache (clone core if missing) ─────────────
+mkdir -p "${REPOS_DIR}"
 CORE_DIR="${REPOS_DIR}/core"
 if [ ! -d "${CORE_DIR}" ]; then
-  echo "📦 Cloning core..."
-  git clone https://github.com/agentteamland/core.git "${CORE_DIR}" 2>/dev/null
+  echo "📦 Cloning core into the cache..."
+  git clone --quiet https://github.com/agentteamland/core.git "${CORE_DIR}"
 else
-  echo "📦 Updating core..."
-  cd "${CORE_DIR}" && git pull --quiet 2>/dev/null
+  echo "📦 core already cached at ${CORE_DIR}"
 fi
 
-# Core symlinks (global) — all skills and rules
-for d in "${CORE_DIR}/skills/"*/; do
-  [ -d "$d" ] || continue
-  ln -sf "${d%/}" "${HOME}/.claude/skills/$(basename "${d%/}")"
-done
-for f in "${CORE_DIR}/rules/"*.md; do
-  [ -f "$f" ] || continue
-  ln -sf "$f" "${HOME}/.claude/rules/$(basename "$f")"
-done
-echo "✅ Core installed globally (skills + rules)"
-
-# 3. Install universal skills (brainstorm, rule)
-# NOTE: create-project was retired in Karar #9 (2026-04-17) \u2014 scaffolders are
-# now team-scoped. /create-new-project comes from the installed team
-# (e.g. software-project-team), not as a global skill.
-for skill_repo in brainstorm rule; do
-  SKILL_REPO_DIR="${REPOS_DIR}/${skill_repo}"
-  if [ ! -d "${SKILL_REPO_DIR}" ]; then
-    echo "📦 Cloning ${skill_repo}..."
-    git clone "https://github.com/agentteamland/${skill_repo}.git" "${SKILL_REPO_DIR}" 2>/dev/null
-  else
-    echo "📦 Updating ${skill_repo}..."
-    cd "${SKILL_REPO_DIR}" && git pull --quiet 2>/dev/null
-  fi
-
-  # Symlink skills
-  if [ -d "${SKILL_REPO_DIR}/skills" ]; then
-    for d in "${SKILL_REPO_DIR}/skills/"*/; do
-      [ -d "$d" ] || continue
-      skill_name=$(basename "${d%/}")
-      ln -sf "${d%/}" "${HOME}/.claude/skills/${skill_name}"
-    done
-  fi
-
-  # Symlink rules
-  if [ -d "${SKILL_REPO_DIR}/rules" ]; then
-    for f in "${SKILL_REPO_DIR}/rules/"*.md; do
-      [ -f "$f" ] || continue
-      ln -sf "$f" "${HOME}/.claude/rules/$(basename "$f")"
-    done
-  fi
-done
-echo "✅ Universal skills installed (brainstorm, rule, rule-wizard)"
-
+# ── Step 3: register hooks (opt-in but recommended) ────────────────────
 echo ""
-echo "════════════════════════════════════════════"
+echo "Registering Claude Code hooks (SessionStart + UserPromptSubmit)..."
+echo "These keep the cache auto-updated and surface inline learning markers."
+atl setup-hooks
+
+# ── Done ───────────────────────────────────────────────────────────────
+echo ""
+echo "════════════════════════════════════════════════════════════════"
 echo "✅ Bootstrap complete!"
 echo ""
-echo "Global skills: /team, /save-learnings, /wiki, /create-code-diagram, /brainstorm, /rule, /rule-wizard"
-echo "Global rules:  memory-system, agent-structure, version-check, brainstorm, karpathy-guidelines, learning-capture, docs-sync"
-echo "Global agents: (none \u2014 agents are team-scoped, project-level)"
-echo ""
-echo "Repo cache:    ~/.claude/repos/agentteamland/"
+echo "Global cache: ${REPOS_DIR}"
 echo ""
 echo "Next steps (per project):"
 echo "  cd your-project/"
-echo "  /team install software-project-team     # or any team name from the registry"
-echo "  /create-new-project YourProjectName     # team-scoped scaffolder"
-echo "  /verify-system                          # team-scoped health check"
+echo "  atl install software-project-team     # or any team name from the registry"
+echo "  atl install design-system-team        # for native design + prototype skills"
 echo ""
-echo "Browse teams: https://github.com/agentteamland/registry"
-echo "════════════════════════════════════════════"
+echo "Browse teams:  https://github.com/agentteamland/registry"
+echo "Full docs:     https://agentteamland.github.io/docs/"
+echo "════════════════════════════════════════════════════════════════"
